@@ -17,6 +17,8 @@ class User(Base):
     must_change_password = Column(Integer, default=0)  # 1 = true, for default tutor
 
     sessions_created = relationship("LiveSession", back_populates="creator")
+    reset_token = Column(String, nullable=True)
+    reset_token_expiry = Column(DateTime, nullable=True)
 
 
 class LiveSession(Base):

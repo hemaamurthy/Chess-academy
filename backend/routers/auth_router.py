@@ -1,5 +1,7 @@
+import secrets
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
 
 from database.db import get_db
 from models.models import User
@@ -62,3 +64,42 @@ def change_password(
     current_user.must_change_password = 0
     db.commit()
     return {"message": "Password changed successfully"}
+
+ 
+@router.post("/forgot-password")
+def forgot_password(email: str, db: Session = Depends(get_db)):
+
+    user = db.query(User).filter(User.email == email).first()
+
+    if not user:
+        return {"message": "User not found"}
+
+    token = secrets.token_urlsafe(32)
+
+    user.reset_token = token
+    user.reset_token_expiry = datetime.utcnow() + timedelta(minutes=15)
+
+    db.commit()
+
+    return {"token": token}
+@router.post("/reset-password")
+def reset_password(
+    token: str,
+    new_password: str,
+    db: Session = Depends(get_db)
+):
+
+    user = db.query(User).filter(User.reset_token == token).first()
+
+    if not user:
+        return {"message": "Invalid token"}
+    if user.reset_token_expiry < datetime.utcnow():
+       return {"message": "Token expired"}
+
+    user.password_hash = hash_password(new_password)
+    user.reset_token = None
+    user.reset_token_expiry = None
+
+    db.commit()
+
+    return {"message": "Password reset successful"}
