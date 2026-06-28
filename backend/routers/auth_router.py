@@ -1,4 +1,7 @@
 import secrets
+import resend
+import os
+from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -7,6 +10,9 @@ from database.db import get_db
 from models.models import User
 from schemas.schemas import UserRegister, UserLogin, UserOut, Token, ChangePassword
 from auth.auth import hash_password, verify_password, create_access_token, get_current_user
+load_dotenv()
+
+resend.api_key = os.getenv("RESEND_API_KEY")
 
 router = APIRouter(tags=["Auth"])
 
@@ -72,7 +78,7 @@ def forgot_password(email: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == email).first()
 
     if not user:
-        return {"message": "User not found"}
+        return {"message": "If the email exists, a reset link has been sent"}
 
     token = secrets.token_urlsafe(32)
 
@@ -81,7 +87,21 @@ def forgot_password(email: str, db: Session = Depends(get_db)):
 
     db.commit()
 
-    return {"token": token}
+    reset_link = f"https://chess-academy-tau.vercel.app/reset-password?token={token}"
+
+    resend.Emails.send({
+        "from": "onboarding@resend.dev",
+        "to": [user.email],
+        "subject": "Chess Academy Password Reset",
+        "html": f"""
+        <h2>Password Reset</h2>
+        <p>Click the link below to reset your password:</p>
+        <a href="{reset_link}">{reset_link}</a>
+        """
+    })
+
+    return {"message": "Password reset email sent"}
+
 @router.post("/reset-password")
 def reset_password(
     token: str,

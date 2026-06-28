@@ -3,7 +3,8 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
-
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -22,6 +23,8 @@ function AppRoutes() {
         <Route path="/" element={user ? <Navigate to={user.role === 'tutor' ? '/tutor' : '/dashboard'} /> : <Landing />} />
         <Route path="/login" element={user ? <Navigate to={user.role === 'tutor' ? '/tutor' : '/dashboard'} /> : <Login />} />
         <Route path="/register" element={user ? <Navigate to="/dashboard" /> : <Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/dashboard" element={<ProtectedRoute role="student"><StudentDashboard /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute role="student"><Profile /></ProtectedRoute>} />
         <Route path="/tutor" element={<ProtectedRoute role="tutor"><TutorDashboard /></ProtectedRoute>} />

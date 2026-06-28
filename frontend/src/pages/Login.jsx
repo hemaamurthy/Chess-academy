@@ -66,6 +66,9 @@ export default function Login() {
               className="input-field"
             />
           </div>
+          <Link to="/forgot-password">
+           Forgot Password?
+          </Link>
 
           <button type="submit" disabled={loading} className="btn-gold w-full mt-2">
             {loading ? 'Logging in...' : 'Login →'}
