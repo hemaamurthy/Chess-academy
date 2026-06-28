@@ -8,7 +8,7 @@ export default function ForgotPassword() {
     e.preventDefault();
 
     const res = await fetch(
-      `http://127.0.0.1:8000/forgot-password?email=${email}`,
+      `https://chess-academy-0t5x.onrender.com/forgot-password?email=${email}`,
       {
         method: "POST",
       }
