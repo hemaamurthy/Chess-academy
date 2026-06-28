@@ -109,12 +109,20 @@ def reset_password(
     db: Session = Depends(get_db)
 ):
 
+    print("=================================")
+    print("TOKEN RECEIVED:", token)
+    print("PASSWORD RECEIVED:", new_password)
+
     user = db.query(User).filter(User.reset_token == token).first()
+
+    print("USER FOUND:", user)
+    print("=================================")
 
     if not user:
         return {"message": "Invalid token"}
+
     if user.reset_token_expiry < datetime.utcnow():
-       return {"message": "Token expired"}
+        return {"message": "Token expired"}
 
     user.password_hash = hash_password(new_password)
     user.reset_token = None
