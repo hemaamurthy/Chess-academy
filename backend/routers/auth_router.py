@@ -5,16 +5,27 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
+from pydantic import BaseModel
 
 from database.db import get_db
 from models.models import User
 from schemas.schemas import UserRegister, UserLogin, UserOut, Token, ChangePassword
 from auth.auth import hash_password, verify_password, create_access_token, get_current_user
+
 load_dotenv()
 
 resend.api_key = os.getenv("RESEND_API_KEY")
 
 router = APIRouter(tags=["Auth"])
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
 
 
 @router.post("/register", response_model=UserOut, status_code=201)
@@ -71,20 +82,17 @@ def change_password(
     db.commit()
     return {"message": "Password changed successfully"}
 
- 
-@router.post("/forgot-password")
-def forgot_password(email: str, db: Session = Depends(get_db)):
 
-    user = db.query(User).filter(User.email == email).first()
+@router.post("/forgot-password")
+def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == data.email).first()
 
     if not user:
         return {"message": "If the email exists, a reset link has been sent"}
 
     token = secrets.token_urlsafe(32)
-
     user.reset_token = token
     user.reset_token_expiry = datetime.utcnow() + timedelta(minutes=15)
-
     db.commit()
 
     reset_link = f"https://chess-academy-tau.vercel.app/reset-password?token={token}"
@@ -102,32 +110,27 @@ def forgot_password(email: str, db: Session = Depends(get_db)):
 
     return {"message": "Password reset email sent"}
 
+
 @router.post("/reset-password")
-def reset_password(
-    token: str,
-    new_password: str,
-    db: Session = Depends(get_db)
-):
-
+def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
     print("=================================")
-    print("TOKEN RECEIVED:", token)
-    print("PASSWORD RECEIVED:", new_password)
+    print("TOKEN RECEIVED:", data.token)
+    print("PASSWORD RECEIVED:", data.new_password)
 
-    user = db.query(User).filter(User.reset_token == token).first()
+    user = db.query(User).filter(User.reset_token == data.token).first()
 
     print("USER FOUND:", user)
     print("=================================")
 
     if not user:
-        return {"message": "Invalid token"}
+        raise HTTPException(status_code=400, detail="Invalid token")
 
     if user.reset_token_expiry < datetime.utcnow():
-        return {"message": "Token expired"}
+        raise HTTPException(status_code=400, detail="Token expired")
 
-    user.password_hash = hash_password(new_password)
+    user.password_hash = hash_password(data.new_password)
     user.reset_token = None
     user.reset_token_expiry = None
-
     db.commit()
 
     return {"message": "Password reset successful"}

@@ -7,16 +7,19 @@ export default function ForgotPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const res = await fetch(
-      `https://chess-academy-0t5x.onrender.com/forgot-password?email=${email}`,
-      {
+    try {
+      const res = await fetch("https://chess-academy-0t5x.onrender.com/forgot-password", {
         method: "POST",
-      }
-    );
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
 
-    const data = await res.json();
-
-    setMessage(data.message);
+      const data = await res.json();
+      setMessage(data.message);
+    } catch (err) {
+      console.error("ERROR =", err);
+      setMessage("Request Failed. Please try again.");
+    }
   };
 
   return (
@@ -39,12 +42,12 @@ export default function ForgotPassword() {
           type="submit"
           className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-semibold py-3 rounded-lg"
         >
-          Send Reset Request
+          Send Reset Link
         </button>
       </form>
 
       {message && (
-        <p className="mt-4 text-green-400">
+        <p className={`mt-4 break-words ${message.toLowerCase().includes("failed") ? "text-red-400" : "text-green-400"}`}>
           {message}
         </p>
       )}
