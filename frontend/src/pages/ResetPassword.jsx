@@ -11,7 +11,7 @@ export default function ResetPassword() {
     e.preventDefault();
 
     const res = await fetch(
-       `https://chess-academy-0t5x.onrender.com/reset-password?token=${token}&new_password=${password}`,
+       `https://chess-academy-0t5x.onrender.com/reset-password?token=${token}&new_password=${encodeURIComponent(password)}`,
       {
         method: "POST",
       }
