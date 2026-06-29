@@ -32,6 +32,21 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
+
+    # Add missing columns if they don't exist
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN reset_token VARCHAR"))
+            conn.commit()
+        except Exception:
+            pass  # column already exists
+
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN reset_token_expiry TIMESTAMP"))
+            conn.commit()
+        except Exception:
+            pass  # column already exists
+
     seed()
 
 # Routers
@@ -43,15 +58,3 @@ app.include_router(sessions_router.router)
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
-@app.on_event("startup")
-def on_startup():
-    Base.metadata.create_all(bind=engine)
-    
-    # Add missing columns if they don't exist
-    with engine.connect() as conn:
-        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR"))
-        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expiry TIMESTAMP"))
-        conn.commit()
-    
-    seed()
